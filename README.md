@@ -1,6 +1,19 @@
-# gwcli
+# google-workspace-cli
 
-Google Workspace CLI with multi-profile support for Gmail, Calendar, and Drive.
+Google Workspace CLI with multi-profile support for Gmail, Calendar, and Drive. Designed for both human use and LLM agent integration.
+
+## Why This Exists
+
+This CLI was built specifically to give LLM agents (like Claude Code) access to Google Workspace.
+
+**Why CLI instead of MCP?** CLIs are more context-efficient. MCP servers require tool schemas to be loaded into the agent's context window on every request. A CLI skill only needs a concise command reference, and the agent invokes it via standard shell execution. Same capabilities, fewer tokens.
+
+The JSON output mode provides structured data that agents can parse and act on.
+
+**Use cases:**
+- Let Claude Code read and respond to your emails
+- Have an AI agent manage your calendar
+- Search and retrieve Google Drive files programmatically
 
 ## Features
 
@@ -8,13 +21,13 @@ Google Workspace CLI with multi-profile support for Gmail, Calendar, and Drive.
 - **Gmail** - List, search, read, archive, draft, send, reply
 - **Calendar** - List calendars, view events, create/update/delete events
 - **Drive** - List, search, download files, export Google Docs/Sheets/Slides
-- **Flexible output** - JSON, table, or text format
+- **Flexible output** - JSON (for agents), table, or text format
 
 ## Installation
 
 ```bash
-git clone <repo>
-cd gwcli
+git clone https://github.com/ianpatrickhines/google-workspace-cli.git
+cd google-workspace-cli
 npm install
 npm run build
 npm link
@@ -162,6 +175,58 @@ Config files are stored in `~/.config/gwcli/`:
     │   └── config.json           # Profile metadata
     └── work/
         └── credentials.json
+```
+
+## LLM Agent Integration
+
+### Claude Code
+
+To use with Claude Code, create a skill file that teaches it how to use the CLI.
+
+**Example skill** (`~/.claude/skills/gwcli/SKILL.md`):
+
+```yaml
+---
+name: gwcli
+description: "Google Workspace CLI for Gmail, Calendar, and Drive. Use when reading/sending emails, managing calendar events, or accessing Drive files."
+---
+```
+
+Then add command reference and examples in the skill body. The key is using `--format json` so Claude can parse the output:
+
+```bash
+# Claude can parse this structured output
+gwcli gmail list --format json
+gwcli calendar events --format json
+```
+
+### Other LLM Agents
+
+Any agent that can execute shell commands can use this CLI. The JSON output mode provides structured data:
+
+```bash
+# Returns JSON array of emails
+gwcli gmail list --format json
+
+# Returns JSON array of calendar events
+gwcli calendar events --days 7 --format json
+
+# Returns JSON array of files
+gwcli drive list --format json
+```
+
+### Pre-Approving Commands
+
+For Claude Code, you can pre-approve gwcli commands in your settings so the agent can run them without confirmation:
+
+```json
+{
+  "permissions": {
+    "allow": [
+      "Bash(gwcli:*)"
+    ]
+  }
+}
 ```
 
 ## License
